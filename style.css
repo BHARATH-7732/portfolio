@@ -1,0 +1,54 @@
+.nav-link {
+    margin: 0 0.5rem;
+    color: #2563eb;
+    text-decoration: none;
+  }
+  .nav-link:hover {
+    text-decoration: underline;
+  }
+  
+  .hero-section {
+    background-color: #e5e7eb;
+    padding: 3rem 1rem;
+  }
+  
+  .section-container {
+    max-width: 768px;
+    margin: 0 auto;
+    padding: 3rem 1rem;
+  }
+  
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    color: #374151;
+  }
+  
+  .project {
+    margin-bottom: 2rem;
+  }
+  
+  .project-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+  }
+  
+  .project-desc {
+    color: #4b5563;
+  }
+  
+  .footer {
+    background-color: #1f2937;
+    color: white;
+    text-align: center;
+    padding: 1rem;
+    margin-top: 2rem;
+  }
+  
