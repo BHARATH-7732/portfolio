@@ -1,54 +1,78 @@
+/* ========== Navigation ========== */
 .nav-link {
-    margin: 0 0.5rem;
-    color: #2563eb;
-    text-decoration: none;
-  }
-  .nav-link:hover {
-    text-decoration: underline;
-  }
-  
-  .hero-section {
-    background-color: #e5e7eb;
-    padding: 3rem 1rem;
-  }
-  
-  .section-container {
-    max-width: 768px;
-    margin: 0 auto;
-    padding: 3rem 1rem;
-  }
-  
-  .section-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-  }
-  
-  .skills-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 1rem;
-    color: #374151;
-  }
-  
-  .project {
-    margin-bottom: 2rem;
-  }
-  
-  .project-title {
-    font-size: 1.25rem;
-    font-weight: bold;
-  }
-  
-  .project-desc {
-    color: #4b5563;
-  }
-  
-  .footer {
-    background-color: #1f2937;
-    color: white;
-    text-align: center;
-    padding: 1rem;
-    margin-top: 2rem;
-  }
-  
+  margin: 0 0.75rem;
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease, text-decoration 0.3s ease;
+}
+
+.nav-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* ========== Hero Section ========== */
+.hero-section {
+  background-color: #e5e7eb;
+  padding: 4rem 1rem;
+  text-align: center;
+}
+
+/* ========== Section Layout ========== */
+.section-container {
+  max-width: 768px;
+  margin: 0 auto;
+  padding: 4rem 1rem;
+}
+
+/* ========== Section Titles ========== */
+.section-title {
+  font-size: 1.875rem; /* 30px */
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: #111827;
+  text-align: center;
+}
+
+/* ========== Skills Grid ========== */
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  color: #374151;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* ========== Projects ========== */
+.project {
+  margin-bottom: 2.5rem;
+  padding: 1.5rem;
+  border-left: 4px solid #2563eb;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+}
+
+.project-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.project-desc {
+  font-size: 1rem;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+/* ========== Footer ========== */
+.footer {
+  background-color: #1f2937;
+  color: #ffffff;
+  text-align: center;
+  padding: 1.5rem 1rem;
+  font-size: 0.875rem;
+  margin-top: 3rem;
+}
