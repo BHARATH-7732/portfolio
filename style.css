@@ -12,6 +12,11 @@
   text-decoration: underline;
 }
 
+/* Smooth scrolling for the entire page */
+html {
+  scroll-behavior: smooth;
+}
+
 /* Hero Section */
 .hero-section {
   background-color: #e5e7eb;
@@ -57,6 +62,11 @@
   padding: 1rem;
   border-radius: 0.5rem;
   font-weight: 500;
+  transition: transform 0.3s ease;
+}
+
+.skills-grid:hover {
+  transform: translateY(-2px);
 }
 
 /* Project Cards */
@@ -66,11 +76,12 @@
   border-radius: 0.5rem;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   margin-bottom: 2rem;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .project:hover {
   transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .project-title {
@@ -86,6 +97,16 @@
   line-height: 1.6;
 }
 
+/* Enhanced button styling for resume download */
+.hero-section a {
+  transition: all 0.3s ease;
+}
+
+.hero-section a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
 /* Footer */
 .footer {
   background-color: #1f2937;
@@ -95,4 +116,53 @@
   font-size: 0.9rem;
   margin-top: 3rem;
   border-top: 1px solid #374151;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .hero-section {
+    padding: 2rem 1rem;
+  }
+  
+  .section-container {
+    padding: 2rem 1rem;
+  }
+  
+  .skills-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.75rem;
+  }
+  
+  .section-title {
+    font-size: 1.5rem;
+  }
+  
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .nav-link {
+    margin: 0.25rem 0.5rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .nav-link,
+  .hero-section a,
+  .footer {
+    display: none;
+  }
+  
+  body {
+    background: white;
+    color: black;
+  }
+  
+  .project,
+  .skills-grid {
+    break-inside: avoid;
+  }
 }
