@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Todo App - S. Bharath Portfolio</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
+  <style>
+    .completed {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+    .todo-item {
+      transition: all 0.3s ease;
+    }
+    .todo-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <!-- Header -->
+  <header class="bg-white shadow p-6">
+    <div class="max-w-4xl mx-auto flex justify-between items-center">
+      <h1 class="text-2xl font-bold">📝 Todo App</h1>
+      <nav>
+        <a href="/" class="text-blue-600 hover:text-blue-800 font-medium">← Back to Portfolio</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Todo App Container -->
+  <div class="max-w-2xl mx-auto mt-8 p-6">
+    <div class="text-center mb-8">
+      <h2 class="text-3xl font-bold text-gray-800 mb-2">My Todo List</h2>
+      <p class="text-gray-600" id="status">
+        <span id="activeCount">0</span> active, <span id="completedCount">0</span> completed
+      </p>
+    </div>
+
+    <!-- Add Todo Form -->
+    <form id="todoForm" class="mb-8">
+      <div class="flex gap-2">
+        <input
+          type="text"
+          id="todoInput"
+          placeholder="Add a new todo..."
+          class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+        <button
+          type="submit"
+          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          Add Todo
+        </button>
+      </div>
+    </form>
+
+    <!-- Filter buttons -->
+    <div class="flex justify-center space-x-2 mb-6">
+      <button id="filterAll" class="filter-btn px-4 py-2 rounded-lg font-medium bg-blue-600 text-white">
+        All
+      </button>
+      <button id="filterActive" class="filter-btn px-4 py-2 rounded-lg font-medium bg-gray-200 text-gray-700 hover:bg-gray-300">
+        Active
+      </button>
+      <button id="filterCompleted" class="filter-btn px-4 py-2 rounded-lg font-medium bg-gray-200 text-gray-700 hover:bg-gray-300">
+        Completed
+      </button>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="loading" class="text-center py-8">
+      <div class="text-gray-600">Loading todos...</div>
+    </div>
+
+    <!-- Todo list -->
+    <div id="todoList" class="space-y-3 hidden"></div>
+
+    <!-- Empty state -->
+    <div id="emptyState" class="text-center py-8 text-gray-500 hidden">
+      No todos yet. Add one above!
+    </div>
+  </div>
+
+  <script>
+    class TodoApp {
+      constructor() {
+        this.todos = [];
+        this.currentFilter = 'all';
+        this.init();
+      }
+
+      async init() {
+        this.bindEvents();
+        await this.loadTodos();
+        this.render();
+      }
+
+      bindEvents() {
+        // Form submission
+        document.getElementById('todoForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          this.addTodo();
+        });
+
+        // Filter buttons
+        document.getElementById('filterAll').addEventListener('click', () => this.setFilter('all'));
+        document.getElementById('filterActive').addEventListener('click', () => this.setFilter('active'));
+        document.getElementById('filterCompleted').addEventListener('click', () => this.setFilter('completed'));
+      }
+
+      async loadTodos() {
+        try {
+          const response = await fetch('/api/todos');
+          this.todos = await response.json();
+          document.getElementById('loading').classList.add('hidden');
+          document.getElementById('todoList').classList.remove('hidden');
+        } catch (error) {
+          console.error('Error loading todos:', error);
+          document.getElementById('loading').innerHTML = '<div class="text-red-600">Error loading todos</div>';
+        }
+      }
+
+      async addTodo() {
+        const input = document.getElementById('todoInput');
+        const text = input.value.trim();
+        
+        if (!text) return;
+
+        try {
+          const response = await fetch('/api/todos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+          });
+          
+          const newTodo = await response.json();
+          this.todos.push(newTodo);
+          input.value = '';
+          this.render();
+        } catch (error) {
+          console.error('Error adding todo:', error);
+        }
+      }
+
+      async updateTodo(id, updates) {
+        try {
+          const response = await fetch(`/api/todos/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates)
+          });
+          
+          const updatedTodo = await response.json();
+          const index = this.todos.findIndex(todo => todo.id === id);
+          if (index !== -1) {
+            this.todos[index] = updatedTodo;
+            this.render();
+          }
+        } catch (error) {
+          console.error('Error updating todo:', error);
+        }
+      }
+
+      async deleteTodo(id) {
+        try {
+          await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+          this.todos = this.todos.filter(todo => todo.id !== id);
+          this.render();
+        } catch (error) {
+          console.error('Error deleting todo:', error);
+        }
+      }
+
+      setFilter(filter) {
+        this.currentFilter = filter;
+        
+        // Update button styles
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+          btn.className = 'filter-btn px-4 py-2 rounded-lg font-medium bg-gray-200 text-gray-700 hover:bg-gray-300';
+        });
+        
+        document.getElementById(`filter${filter.charAt(0).toUpperCase() + filter.slice(1)}`).className = 
+          'filter-btn px-4 py-2 rounded-lg font-medium bg-blue-600 text-white';
+        
+        this.render();
+      }
+
+      getFilteredTodos() {
+        switch (this.currentFilter) {
+          case 'active':
+            return this.todos.filter(todo => !todo.completed);
+          case 'completed':
+            return this.todos.filter(todo => todo.completed);
+          default:
+            return this.todos;
+        }
+      }
+
+      render() {
+        const filteredTodos = this.getFilteredTodos();
+        const todoList = document.getElementById('todoList');
+        const emptyState = document.getElementById('emptyState');
+        
+        // Update counts
+        const activeCount = this.todos.filter(todo => !todo.completed).length;
+        const completedCount = this.todos.filter(todo => todo.completed).length;
+        document.getElementById('activeCount').textContent = activeCount;
+        document.getElementById('completedCount').textContent = completedCount;
+
+        if (filteredTodos.length === 0) {
+          todoList.classList.add('hidden');
+          emptyState.classList.remove('hidden');
+          
+          if (this.currentFilter !== 'all') {
+            emptyState.textContent = `No ${this.currentFilter} todos.`;
+          } else {
+            emptyState.textContent = 'No todos yet. Add one above!';
+          }
+        } else {
+          todoList.classList.remove('hidden');
+          emptyState.classList.add('hidden');
+          
+          todoList.innerHTML = filteredTodos.map(todo => this.renderTodoItem(todo)).join('');
+          
+          // Bind events for todo items
+          this.bindTodoEvents();
+        }
+      }
+
+      renderTodoItem(todo) {
+        return `
+          <div class="todo-item bg-white p-4 rounded-lg shadow-sm border border-gray-200" data-id="${todo.id}">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center flex-1">
+                <input
+                  type="checkbox"
+                  ${todo.completed ? 'checked' : ''}
+                  class="todo-checkbox mr-3 h-4 w-4 text-blue-600 rounded"
+                />
+                <span class="todo-text flex-1 ${todo.completed ? 'completed text-gray-500' : 'text-gray-800'}" data-original-text="${todo.text}">
+                  ${todo.text}
+                </span>
+                <input
+                  type="text"
+                  value="${todo.text}"
+                  class="todo-edit flex-1 px-2 py-1 border border-gray-300 rounded hidden"
+                />
+              </div>
+              <div class="ml-4 flex space-x-2">
+                <button class="edit-btn text-blue-600 hover:text-blue-800 font-medium">
+                  Edit
+                </button>
+                <button class="delete-btn text-red-600 hover:text-red-800 font-medium">
+                  Delete
+                </button>
+                <button class="save-btn text-green-600 hover:text-green-800 font-medium hidden">
+                  Save
+                </button>
+                <button class="cancel-btn text-gray-600 hover:text-gray-800 font-medium hidden">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      bindTodoEvents() {
+        // Checkbox events
+        document.querySelectorAll('.todo-checkbox').forEach(checkbox => {
+          checkbox.addEventListener('change', (e) => {
+            const todoItem = e.target.closest('.todo-item');
+            const id = todoItem.dataset.id;
+            this.updateTodo(id, { completed: e.target.checked });
+          });
+        });
+
+        // Edit buttons
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const todoItem = e.target.closest('.todo-item');
+            this.startEdit(todoItem);
+          });
+        });
+
+        // Delete buttons
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const todoItem = e.target.closest('.todo-item');
+            const id = todoItem.dataset.id;
+            this.deleteTodo(id);
+          });
+        });
+
+        // Save buttons
+        document.querySelectorAll('.save-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const todoItem = e.target.closest('.todo-item');
+            this.saveEdit(todoItem);
+          });
+        });
+
+        // Cancel buttons
+        document.querySelectorAll('.cancel-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const todoItem = e.target.closest('.todo-item');
+            this.cancelEdit(todoItem);
+          });
+        });
+
+        // Enter key on edit input
+        document.querySelectorAll('.todo-edit').forEach(input => {
+          input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+              const todoItem = e.target.closest('.todo-item');
+              this.saveEdit(todoItem);
+            }
+          });
+        });
+      }
+
+      startEdit(todoItem) {
+        const textSpan = todoItem.querySelector('.todo-text');
+        const editInput = todoItem.querySelector('.todo-edit');
+        const editBtn = todoItem.querySelector('.edit-btn');
+        const deleteBtn = todoItem.querySelector('.delete-btn');
+        const saveBtn = todoItem.querySelector('.save-btn');
+        const cancelBtn = todoItem.querySelector('.cancel-btn');
+
+        textSpan.classList.add('hidden');
+        editInput.classList.remove('hidden');
+        editBtn.classList.add('hidden');
+        deleteBtn.classList.add('hidden');
+        saveBtn.classList.remove('hidden');
+        cancelBtn.classList.remove('hidden');
+
+        editInput.focus();
+      }
+
+      saveEdit(todoItem) {
+        const editInput = todoItem.querySelector('.todo-edit');
+        const newText = editInput.value.trim();
+        
+        if (!newText) return;
+
+        const id = todoItem.dataset.id;
+        this.updateTodo(id, { text: newText });
+      }
+
+      cancelEdit(todoItem) {
+        const textSpan = todoItem.querySelector('.todo-text');
+        const editInput = todoItem.querySelector('.todo-edit');
+        const editBtn = todoItem.querySelector('.edit-btn');
+        const deleteBtn = todoItem.querySelector('.delete-btn');
+        const saveBtn = todoItem.querySelector('.save-btn');
+        const cancelBtn = todoItem.querySelector('.cancel-btn');
+
+        // Reset input value
+        editInput.value = textSpan.dataset.originalText;
+
+        textSpan.classList.remove('hidden');
+        editInput.classList.add('hidden');
+        editBtn.classList.remove('hidden');
+        deleteBtn.classList.remove('hidden');
+        saveBtn.classList.add('hidden');
+        cancelBtn.classList.add('hidden');
+      }
+    }
+
+    // Initialize the app when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      new TodoApp();
+    });
+  </script>
+</body>
+</html>

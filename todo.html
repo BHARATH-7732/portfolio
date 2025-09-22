@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Todo App - S. Bharath Portfolio</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    .completed {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+    .todo-item {
+      transition: all 0.3s ease;
+    }
+    .todo-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <!-- Header -->
+  <header class="bg-white shadow p-6">
+    <div class="max-w-4xl mx-auto flex justify-between items-center">
+      <h1 class="text-2xl font-bold">📝 Todo App</h1>
+      <nav>
+        <a href="/" class="text-blue-600 hover:text-blue-800 font-medium">← Back to Portfolio</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Todo App Container -->
+  <div id="todo-app" class="max-w-2xl mx-auto mt-8 p-6"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // API functions
+    const api = {
+      async getTodos() {
+        const response = await fetch('/api/todos');
+        return response.json();
+      },
+      
+      async createTodo(text) {
+        const response = await fetch('/api/todos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+        return response.json();
+      },
+      
+      async updateTodo(id, updates) {
+        const response = await fetch(`/api/todos/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        });
+        return response.json();
+      },
+      
+      async deleteTodo(id) {
+        await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+      }
+    };
+
+    // TodoItem Component
+    const TodoItem = ({ todo, onUpdate, onDelete }) => {
+      const [isEditing, setIsEditing] = useState(false);
+      const [editText, setEditText] = useState(todo.text);
+
+      const handleSave = async () => {
+        if (editText.trim()) {
+          await onUpdate(todo.id, { text: editText.trim() });
+          setIsEditing(false);
+        }
+      };
+
+      const handleCancel = () => {
+        setEditText(todo.text);
+        setIsEditing(false);
+      };
+
+      return (
+        <div className="todo-item bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center flex-1">
+              <input
+                type="checkbox"
+                checked={todo.completed}
+                onChange={(e) => onUpdate(todo.id, { completed: e.target.checked })}
+                className="mr-3 h-4 w-4 text-blue-600 rounded"
+              />
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSave()}
+                  className="flex-1 px-2 py-1 border border-gray-300 rounded"
+                  autoFocus
+                />
+              ) : (
+                <span className={`flex-1 ${todo.completed ? 'completed text-gray-500' : 'text-gray-800'}`}>
+                  {todo.text}
+                </span>
+              )}
+            </div>
+            <div className="ml-4 flex space-x-2">
+              {isEditing ? (
+                <>
+                  <button
+                    onClick={handleSave}
+                    className="text-green-600 hover:text-green-800 font-medium"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    className="text-gray-600 hover:text-gray-800 font-medium"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => onDelete(todo.id)}
+                    className="text-red-600 hover:text-red-800 font-medium"
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // TodoForm Component
+    const TodoForm = ({ onAdd }) => {
+      const [text, setText] = useState('');
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (text.trim()) {
+          await onAdd(text.trim());
+          setText('');
+        }
+      };
+
+      return (
+        <form onSubmit={handleSubmit} className="mb-8">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Add a new todo..."
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="submit"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Add Todo
+            </button>
+          </div>
+        </form>
+      );
+    };
+
+    // Main TodoApp Component
+    const TodoApp = () => {
+      const [todos, setTodos] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [filter, setFilter] = useState('all'); // all, active, completed
+
+      useEffect(() => {
+        loadTodos();
+      }, []);
+
+      const loadTodos = async () => {
+        try {
+          const todosData = await api.getTodos();
+          setTodos(todosData);
+        } catch (error) {
+          console.error('Error loading todos:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const addTodo = async (text) => {
+        try {
+          const newTodo = await api.createTodo(text);
+          setTodos([...todos, newTodo]);
+        } catch (error) {
+          console.error('Error adding todo:', error);
+        }
+      };
+
+      const updateTodo = async (id, updates) => {
+        try {
+          const updatedTodo = await api.updateTodo(id, updates);
+          setTodos(todos.map(todo => todo.id === id ? updatedTodo : todo));
+        } catch (error) {
+          console.error('Error updating todo:', error);
+        }
+      };
+
+      const deleteTodo = async (id) => {
+        try {
+          await api.deleteTodo(id);
+          setTodos(todos.filter(todo => todo.id !== id));
+        } catch (error) {
+          console.error('Error deleting todo:', error);
+        }
+      };
+
+      const filteredTodos = todos.filter(todo => {
+        if (filter === 'active') return !todo.completed;
+        if (filter === 'completed') return todo.completed;
+        return true;
+      });
+
+      if (loading) {
+        return (
+          <div className="text-center py-8">
+            <div className="text-gray-600">Loading todos...</div>
+          </div>
+        );
+      }
+
+      const completedCount = todos.filter(todo => todo.completed).length;
+      const activeCount = todos.length - completedCount;
+
+      return (
+        <div>
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-800 mb-2">My Todo List</h2>
+            <p className="text-gray-600">
+              {activeCount} active, {completedCount} completed
+            </p>
+          </div>
+
+          <TodoForm onAdd={addTodo} />
+
+          {/* Filter buttons */}
+          <div className="flex justify-center space-x-2 mb-6">
+            {['all', 'active', 'completed'].map(filterType => (
+              <button
+                key={filterType}
+                onClick={() => setFilter(filterType)}
+                className={`px-4 py-2 rounded-lg font-medium capitalize ${
+                  filter === filterType
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                {filterType}
+              </button>
+            ))}
+          </div>
+
+          {/* Todo list */}
+          <div className="space-y-3">
+            {filteredTodos.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                {filter === 'all' ? 'No todos yet. Add one above!' : `No ${filter} todos.`}
+              </div>
+            ) : (
+              filteredTodos.map(todo => (
+                <TodoItem
+                  key={todo.id}
+                  todo={todo}
+                  onUpdate={updateTodo}
+                  onDelete={deleteTodo}
+                />
+              ))
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    // Render the app
+    ReactDOM.render(<TodoApp />, document.getElementById('todo-app'));
+  </script>
+</body>
+</html>
